@@ -2,23 +2,23 @@ import mongoose, { Schema, Document, Types } from "mongoose";
 
 export interface ILectureNote extends Document {
   user: Types.ObjectId;
-  courseId: string;
   title: string;
-  pdfUrl: string;      // Firebase Storage or S3 URL
-  summary?: string;    // Gemini AI summary
-  quizRefs: Types.ObjectId[];
-  uploadedAt: Date;
+  pdfUrl?: string;
+  imageUrl?: string;
+  course?: string;
+  summary?: string;
+  quizRefs?: Types.ObjectId[];
 }
 
 const noteSchema = new Schema<ILectureNote>(
   {
     user: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    courseId: { type: String, required: true },
     title: { type: String, required: true },
-    pdfUrl: { type: String, required: true },
-    summary: { type: String },
+    pdfUrl: String,
+    imageUrl: String,
+    course: String,
+    summary: String,
     quizRefs: [{ type: Schema.Types.ObjectId, ref: "Quiz" }],
-    uploadedAt: { type: Date, default: Date.now },
   },
   { timestamps: true }
 );

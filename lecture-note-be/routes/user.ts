@@ -1,0 +1,55 @@
+import express from "express";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { User } from "../models/user";
+import { connectDB } from "../lib/dbConnect";
+import { verifyUser } from "../middleware/authMiddleware";
+
+const router = express.Router();
+
+// Register new user
+router.post("/", async (req, res) => {
+  await connectDB();
+  const { name, email, password } = req.body;
+
+  if (!name || !email || !password)
+    return res.status(400).json({ error: "Missing required fields" });
+
+  try {
+    const existing = await User.findOne({ email });
+    if (existing)
+      return res.status(400).json({ error: "User already exists" });
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const user = await User.create({ name, email, password: hashedPassword });
+
+    const token = jwt.sign({ _id: user._id }, process.env.JWT_PRIVATE_KEY!, {
+      expiresIn: "1d",
+    });
+
+    res.json({
+      token,
+      user: { id: user._id, name: user.name, email: user.email },
+    });
+  } catch (err) {
+    console.error("Error creating user:", err);
+    res.status(500).json({ error: "Failed to register user" });
+  }
+});
+
+// Get current logged-in user
+router.get("/me", verifyUser, async (req: any, res) => {
+  await connectDB();
+  try {
+    const user = await User.findById(req.user._id).select("-password");
+    if (!user) return res.status(404).json({ error: "User not found" });
+    res.json(user);
+  } catch (err) {
+    console.error("Error fetching user info:", err);
+    res.status(500).json({ error: "Failed to fetch user info" });
+  }
+});
+
+export default router;
