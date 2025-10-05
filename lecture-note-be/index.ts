@@ -2,7 +2,7 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 
-dotenv.config();
+dotenv.config({ path: "../.env.local" });
 import { connectDB } from "./lib/dbConnect";
 
 import authRouter from "./routes/auth";
@@ -17,7 +17,7 @@ import flashcardsRouter from "./routes/flashcard";
 
 const app = express();
 
-app.use(cors());
+app.use(cors({ origin: "http://localhost:5173" }));
 app.use(express.json());
 
 // Connect to MongoDB

@@ -1,6 +1,6 @@
 import express from "express";
 import jwt from "jsonwebtoken";
-import { User } from "../models/user";
+import { User, validateUser } from "../models/user";
 import { connectDB } from "../lib/dbConnect";
 import { verifyUser } from "../middleware/authMiddleware";
 
@@ -11,8 +11,8 @@ router.post("/", async (req, res) => {
   await connectDB();
   const { name, email, password } = req.body;
 
-  if (!name || !email || !password)
-    return res.status(400).json({ error: "Missing required fields" });
+  const { error } = validateUser(req.body);
+  if (error) return res.status(400).json({ error: error.details[0].message });
 
   try {
     const existing = await User.findOne({ email });
