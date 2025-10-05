@@ -40,7 +40,14 @@ router.post("/", verifyUser, async (req: any, res) => {
     const { term, year } = getCurrentTermAndYear(); // 💡 dynamic detection
 
     const url = `https://www.sfu.ca/bin/wcm/course-outlines?${year}/${term}/${dept.toLowerCase()}/${num}`;
-    const { data } = await axios.get(url);
+    interface SFUCourseResponse {
+      info?: {
+        title?: string;
+        [key: string]: any;
+      };
+      [key: string]: any;
+    }
+    const { data } = await axios.get<SFUCourseResponse>(url);
 
     if (!data || !data.info?.title) {
       return res.status(404).json({ error: "Course not found in SFU API" });

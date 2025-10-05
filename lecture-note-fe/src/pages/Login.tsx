@@ -1,35 +1,36 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { userService } from "../service/userService";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
   const [form, setForm] = useState({ email: "", password: "" });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.id]: e.target.value });
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
+    setLoading(true);
     setError("");
 
     try {
+      // 🔑 Call backend login endpoint
       const res = await userService.login(form.email, form.password);
-      console.log("✅ Login success:", res);
 
-      // Store token
+      // ✅ Store token
       localStorage.setItem("token", res.token);
+
+      // 🚀 Redirect
       navigate("/dashboard");
-    } 
-    catch (err: any) {
-      console.error("❌ Login failed:", err);
-      setError(err.response?.data?.error || "Invalid email or password");
+    } catch (err: any) {
+      console.error("Login failed:", err);
+      setError(err.response?.data?.error || "Invalid email or password.");
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
@@ -48,14 +49,15 @@ export default function LoginPage() {
       {/* 🚀 Login container */}
       <div className="relative z-10 bg-[#0f172a]/80 backdrop-blur-xl border border-cyan-900/40 rounded-3xl shadow-[0_0_30px_rgba(34,211,238,0.3)] p-10 w-[380px] text-white transition-all duration-300 hover:shadow-[0_0_40px_rgba(34,211,238,0.5)]">
         <h1 className="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent text-center">
-          Welcome Back, Explorer 🌠
+          Welcome Back 🚀
         </h1>
         <p className="text-slate-400 mt-3 text-center text-sm">
-          Log in to continue your cosmic learning journey
+          Sign in to continue your cosmic learning journey
         </p>
 
+        {/* Error message */}
         {error && (
-          <div className="bg-red-900/40 border border-red-500 text-red-300 mt-4 p-2 rounded text-sm">
+          <div className="bg-red-900/40 border border-red-500 text-red-300 mt-4 p-2 rounded text-center">
             {error}
           </div>
         )}
@@ -70,33 +72,25 @@ export default function LoginPage() {
               id="email"
               type="email"
               required
+              placeholder="astronaut@space.edu"
+              disabled={loading}
               value={form.email}
               onChange={handleChange}
-              placeholder="astronaut@space.edu"
-              disabled={isLoading}
               className="w-full px-4 py-2 bg-slate-900/70 border border-cyan-800/40 rounded-md text-white focus:ring-2 focus:ring-cyan-500 outline-none"
             />
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <label htmlFor="password" className="text-slate-300 text-sm">
-                Password
-              </label>
-              <Link
-                to="/forgot-password"
-                className="text-xs text-cyan-400 hover:text-cyan-300"
-              >
-                Forgot?
-              </Link>
-            </div>
+            <label htmlFor="password" className="text-slate-300 text-sm mb-1">
+              Password
+            </label>
             <input
               id="password"
               type="password"
               required
+              disabled={loading}
               value={form.password}
               onChange={handleChange}
-              disabled={isLoading}
               placeholder="••••••••"
               className="w-full px-4 py-2 bg-slate-900/70 border border-cyan-800/40 rounded-md text-white focus:ring-2 focus:ring-cyan-500 outline-none"
             />
@@ -105,14 +99,13 @@ export default function LoginPage() {
           {/* Login button */}
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={loading}
             className="w-full mt-2 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-md font-semibold text-white hover:from-cyan-400 hover:to-blue-500 active:scale-95 transition-all duration-200 shadow-[0_0_10px_rgba(34,211,238,0.3)]"
           >
-            {isLoading ? "Logging in..." : "Log In"}
+            {loading ? "Checking credentials..." : "Log In"}
           </button>
         </form>
 
-        {/* Divider */}
         <div className="my-6 border-t border-slate-700"></div>
 
         {/* Signup link */}
@@ -122,7 +115,7 @@ export default function LoginPage() {
             onClick={() => navigate("/signup")}
             className="text-cyan-400 hover:text-cyan-300 font-medium underline active:scale-95 transition-all"
           >
-            Join the crew
+            Join the crew ✨
           </button>
         </p>
       </div>

@@ -1,5 +1,4 @@
 import express from "express";
-import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { User } from "../models/user";
 import { connectDB } from "../lib/dbConnect";
@@ -20,16 +19,15 @@ router.post("/", async (req, res) => {
     if (existing)
       return res.status(400).json({ error: "User already exists" });
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    const user = await User.create({ name, email, password: hashedPassword });
+    // ⚡ No need to hash here — the model does it
+    const user = new User({ name, email, password });
+    await user.save();
 
     const token = jwt.sign({ _id: user._id }, process.env.JWT_PRIVATE_KEY!, {
       expiresIn: "1d",
     });
 
-    res.json({
+    res.status(201).json({
       token,
       user: { id: user._id, name: user.name, email: user.email },
     });
