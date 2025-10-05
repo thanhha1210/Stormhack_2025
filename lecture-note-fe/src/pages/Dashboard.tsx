@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { api } from "../service/api";
 
 interface Course {
@@ -28,8 +28,8 @@ export default function Dashboard() {
 
     const fetchData = async () => {
       try {
-        const userRes = await api.get("/user/me");
-        const coursesRes = await api.get("/course");
+        const userRes = await api.get("/users/me");
+        const coursesRes = await api.get("/courses");
         setUser(userRes.data);
         setCourses(coursesRes.data);
       } catch (err: any) {
@@ -48,7 +48,7 @@ export default function Dashboard() {
     setError("");
 
     try {
-      const res = await api.post("/course", { code: newCode });
+      const res = await api.post("/courses", { code: newCode });
       setCourses([res.data, ...courses]);
       setNewCode("");
     } catch (err: any) {
@@ -137,16 +137,15 @@ export default function Dashboard() {
             </p>
           ) : (
             courses.map((course) => (
-              <div
-                key={course._id}
-                className="p-5 rounded-xl bg-slate-900/60 border border-cyan-800/30 shadow-md hover:shadow-cyan-500/20 transition-all duration-200"
-              >
-                <h3 className="text-xl font-semibold text-cyan-300">
-                  {course.code}
-                </h3>
-                <p className="text-slate-300">{course.title}</p>
-                <p className="text-sm text-slate-500 mt-1">{course.term}</p>
-              </div>
+              <Link to={`/courses/${course._id}`} key={course._id}>
+                <div className="p-5 rounded-xl bg-slate-900/60 border border-cyan-800/30 shadow-md hover:shadow-cyan-500/20 transition-all duration-200 h-full">
+                  <h3 className="text-xl font-semibold text-cyan-300">
+                    {course.code}
+                  </h3>
+                  <p className="text-slate-300">{course.title}</p>
+                  <p className="text-sm text-slate-500 mt-1">{course.term}</p>
+                </div>
+              </Link>
             ))
           )}
         </div>

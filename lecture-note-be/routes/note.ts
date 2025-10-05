@@ -1,35 +1,54 @@
 import express from "express";
+import multer from "multer";
+import path from "path";
 import { connectDB } from "../lib/dbConnect";
 import { verifyUser } from "../middleware/authMiddleware";
 import { LectureNote } from "../models/note";
 
 const router = express.Router();
 
+// --- Multer Configuration ---
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "uploads/");
+  },
+  filename: function (req, file, cb) {
+    // Create a unique filename to prevent overwrites
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({ storage: storage });
+
 /**
  * POST /api/notes
- * Upload or create a new lecture note.
- * Body: { courseId, title, pdfUrl }
+ * Upload a new lecture note PDF.
+ * Body: FormData with 'file' (the PDF) and 'course' (the course ID)
  */
-router.post("/", verifyUser, async (req: any, res) => {
+router.post("/", verifyUser, upload.single("file"), async (req: any, res) => {
   await connectDB();
 
-  const { courseId, title, pdfUrl } = req.body;
+  const { course } = req.body; // course ID from FormData
+  const file = req.file;
 
-  if (!title || !pdfUrl) {
-    return res.status(400).json({ error: "Missing title or pdfUrl" });
+  if (!file) {
+    return res.status(400).json({ error: "No file uploaded" });
+  }
+  if (!course) {
+    return res.status(400).json({ error: "Missing course ID" });
   }
 
   try {
     const note = await LectureNote.create({
       user: req.user._id,
-      courseId,
-      title,
-      pdfUrl,
+      course: course,
+      title: file.originalname, // Use original filename as title
+      pdfUrl: file.path, // Save the path to the file
     });
 
-    res.json({
+    res.status(201).json({
       message: "Lecture note uploaded successfully",
-      id: note._id,
       note,
     });
   } catch (err) {

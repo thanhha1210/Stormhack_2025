@@ -22,11 +22,41 @@ function getCurrentTermAndYear() {
   return { term, year };
 }
 
+import { LectureNote } from "../models/note";
+
 // 🪐 Get all user courses
 router.get("/", verifyUser, async (req: any, res) => {
   await connectDB();
   const courses = await Course.find({ user: req.user._id }).sort({ createdAt: -1 });
   res.json(courses);
+});
+
+// 📚 Get all notes for a specific course
+router.get("/:courseId/notes", verifyUser, async (req: any, res) => {
+  await connectDB();
+  try {
+    const notes = await LectureNote.find({
+      user: req.user._id,
+      course: req.params.courseId,
+    });
+    res.json(notes);
+  } catch (err) {
+    console.error("Error fetching notes for course:", err);
+    res.status(500).json({ error: "Failed to fetch notes" });
+  }
+});
+
+// 🛰️ Get a single course by ID
+router.get("/:id", verifyUser, async (req: any, res) => {
+  await connectDB();
+  try {
+    const course = await Course.findOne({ _id: req.params.id, user: req.user._id });
+    if (!course) return res.status(404).json({ error: "Course not found" });
+    res.json(course);
+  } catch (err) {
+    console.error("Error fetching course:", err);
+    res.status(500).json({ error: "Failed to fetch course" });
+  }
 });
 
 // 🚀 Add course by code (auto-fetch SFU title)
@@ -36,34 +66,39 @@ router.post("/", verifyUser, async (req: any, res) => {
   if (!code) return res.status(400).json({ error: "Missing course code" });
 
   try {
-    const [dept, num] = code.trim().split(/\s+/);
-    const { term, year } = getCurrentTermAndYear(); // 💡 dynamic detection
+    const [dept, num] = code.trim().toUpperCase().split(/\s+/);
+    if (!dept || !num) {
+      return res.status(400).json({ error: "Invalid course code format. Use format like 'CMPT 225'." });
+    }
 
+    const { term, year } = getCurrentTermAndYear();
     const url = `https://www.sfu.ca/bin/wcm/course-outlines?${year}/${term}/${dept.toLowerCase()}/${num}`;
-    interface SFUCourseResponse {
-      info?: {
-        title?: string;
-        [key: string]: any;
-      };
-      [key: string]: any;
-    }
-    const { data } = await axios.get<SFUCourseResponse>(url);
 
-    if (!data || !data.info?.title) {
-      return res.status(404).json({ error: "Course not found in SFU API" });
+    // Fetch the list of sections for the course
+    const { data: sections } = await axios.get<any[]>(url);
+
+    // Check if any sections were returned
+    if (!sections || sections.length === 0) {
+      return res.status(404).json({ error: `Course ${code} not found for the ${term} ${year} term.` });
     }
+
+    // Take the title from the first section
+    const courseTitle = sections[0].title;
 
     const course = await Course.create({
       user: req.user._id,
       code,
-      title: data.info.title,
+      title: courseTitle,
       term: `${term} ${year}`,
     });
 
     res.status(201).json(course);
   } catch (err: any) {
-    console.error("SFU API fetch failed:", err.message);
-    res.status(500).json({ error: "Failed to fetch course data" });
+    if (err.response && err.response.status === 404) {
+        return res.status(404).json({ error: `Course ${code} not found in the SFU database for the current term.` });
+    }
+    console.error("Add course process failed:", err.message);
+    res.status(500).json({ error: "Failed to add course. Please check the course code and try again." });
   }
 });
 
