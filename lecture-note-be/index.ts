@@ -12,6 +12,7 @@ import summaryRouter from "./routes/summary";
 import quizzesRouter from "./routes/quizz";
 import quizGenerateRouter from "./routes/quizzGenerate";
 import testRouter from "./routes/test";
+import courseRouter from "./routes/course";
 import flashcardsRouter from "./routes/flashcard";
 
 const app = express();
@@ -33,6 +34,8 @@ app.use("/api/quizzes", quizzesRouter);
 app.use("/api/quizzes/generate", quizGenerateRouter);
 app.use("/api/tests", testRouter);
 app.use("/api/flashcards", flashcardsRouter);
+app.use("/api/courses", courseRouter);
+
 
 // Root route
 app.get("/", (_req: Request, res: Response) => {
