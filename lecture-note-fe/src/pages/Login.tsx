@@ -1,23 +1,37 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { userService } from "../service/userService";
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [form, setForm] = useState({ email: "", password: "" });
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [e.target.id]: e.target.value });
   };
 
-  useEffect(() => {
-    if (isLoading) {
-      const timer = setTimeout(() => {
-        navigate("/dashboard");
-      }, 1000);
-      return () => clearTimeout(timer);
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const res = await userService.login(form.email, form.password);
+      console.log("✅ Login success:", res);
+
+      // Store token
+      localStorage.setItem("token", res.token);
+      navigate("/dashboard");
+    } 
+    catch (err: any) {
+      console.error("❌ Login failed:", err);
+      setError(err.response?.data?.error || "Invalid email or password");
+    } finally {
+      setIsLoading(false);
     }
-  }, [isLoading, navigate]);
+  };
 
   return (
     <div className="relative min-h-screen w-full overflow-hidden bg-gradient-to-b from-[#020617] via-[#0a0e1a] to-black flex items-center justify-center">
@@ -37,8 +51,14 @@ export default function LoginPage() {
           Welcome Back, Explorer 🌠
         </h1>
         <p className="text-slate-400 mt-3 text-center text-sm">
-          Sign up to start your cosmic learning journey
+          Log in to continue your cosmic learning journey
         </p>
+
+        {error && (
+          <div className="bg-red-900/40 border border-red-500 text-red-300 mt-4 p-2 rounded text-sm">
+            {error}
+          </div>
+        )}
 
         {/* Form */}
         <form onSubmit={handleLogin} className="mt-8 space-y-5 text-left">
@@ -50,6 +70,8 @@ export default function LoginPage() {
               id="email"
               type="email"
               required
+              value={form.email}
+              onChange={handleChange}
               placeholder="astronaut@space.edu"
               disabled={isLoading}
               className="w-full px-4 py-2 bg-slate-900/70 border border-cyan-800/40 rounded-md text-white focus:ring-2 focus:ring-cyan-500 outline-none"
@@ -72,19 +94,21 @@ export default function LoginPage() {
               id="password"
               type="password"
               required
+              value={form.password}
+              onChange={handleChange}
               disabled={isLoading}
               placeholder="••••••••"
               className="w-full px-4 py-2 bg-slate-900/70 border border-cyan-800/40 rounded-md text-white focus:ring-2 focus:ring-cyan-500 outline-none"
             />
           </div>
 
-          {/* Signup button */}
+          {/* Login button */}
           <button
             type="submit"
             disabled={isLoading}
             className="w-full mt-2 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-md font-semibold text-white hover:from-cyan-400 hover:to-blue-500 active:scale-95 transition-all duration-200 shadow-[0_0_10px_rgba(34,211,238,0.3)]"
           >
-            {isLoading ? "Warping to dashboard..." : "Log In"}
+            {isLoading ? "Logging in..." : "Log In"}
           </button>
         </form>
 
@@ -93,7 +117,7 @@ export default function LoginPage() {
 
         {/* Signup link */}
         <p className="text-center text-sm text-slate-400">
-          Don't have an account?{" "}
+          Don’t have an account?{" "}
           <button
             onClick={() => navigate("/signup")}
             className="text-cyan-400 hover:text-cyan-300 font-medium underline active:scale-95 transition-all"
