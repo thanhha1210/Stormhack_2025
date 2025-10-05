@@ -22,9 +22,12 @@ export const noteService = {
     formData.append("file", file);
     formData.append("course", courseId);
 
-    // When sending FormData, the browser automatically sets the correct
-    // Content-Type header (multipart/form-data).
-    const res = await api.post("/notes", formData);
+    // When sending FormData, we must override the default JSON content-type.
+    const res = await api.post("/notes", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
     return res.data;
   },
 };
